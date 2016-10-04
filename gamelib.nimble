@@ -10,7 +10,7 @@ SkipFiles	= """
 alite.html
 LICENSE
 .gitignore
-README
+README.md
 """
 
 [Deps]
