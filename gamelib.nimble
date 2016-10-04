@@ -6,7 +6,12 @@ description	= """A library of functions to make creating games using Nim and SDL
 This does not intend to be a full blown engine and tries to keep all the components loosly coupled so that individual parts can be used separately."""
 license		= "MIT"
 
-SkipFiles	= "alite.html"
+SkipFiles	= """
+alite.html
+LICENSE
+.gitignore
+README
+"""
 
 [Deps]
 Requires: """
