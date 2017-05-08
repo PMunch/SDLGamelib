@@ -7,7 +7,7 @@
 # include the means to load a NinePatch image directly. Note that the NinePatch
 # has two different render functions, one that renders the NinePatch to fill a
 # region (regular render), the other to render it around a region
-# (renderForRegion). 
+# (renderForRegion).
 ################################################################################
 
 import sdl2
@@ -58,7 +58,7 @@ proc render*(renderer: RendererPtr, ninepatch: NinePatch, x,y,w,h: cint, alpha:u
   for c in ninepatch.splitColumns:
     for r in ninepatch.splitRows:
       src = rect(ninepatch.region.x+scW,ninepatch.region.y+scH,c,r)
-      dst = rect (x+dcW,y+dcH,c+(if col == 1: growX else: 0),r+(if row == 1: growY else: 0))
+      dst = rect(x+dcW,y+dcH,c+(if col == 1: growX else: 0),r+(if row == 1: growY else: 0))
       renderer.copyEx(ninepatch.texture,
         src,
         dst,

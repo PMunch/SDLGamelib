@@ -1,9 +1,8 @@
-################################################################################
-# The content of this file is borrowed directly from the nimx project:
-# https://github.com/yglukhov/nimx/blob/master/nimx/resource.nim
+###########################################################
+# The content of this file is borrowed directly from the nimx project: https://github.com/yglukhov/nimx/blob/master/nimx/resource.nim
 # Sole exception is the lines iterator
 # This is used to make the code interoperable across all SDL2 supported devices
-################################################################################
+###########################################################
 
 import sdl2
 import streams

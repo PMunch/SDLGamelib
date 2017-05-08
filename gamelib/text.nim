@@ -62,8 +62,7 @@ proc setText*(text:Text, str:string) =
 proc setColor*(text:Text, color:Color) =
   if text.color != color:
     text.color = color
-    if text.color.r != color.r or text.color.g != color.g or text.color.b != color.b:
-      text.createTexture
+    text.createTexture
 
 proc setFont*(text:Text, font: FontPtr) =
   if text.font != font:
