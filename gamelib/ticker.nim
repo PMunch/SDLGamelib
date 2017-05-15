@@ -14,7 +14,6 @@
 # trying to catch up after a pause where they were meant to be frozen.
 ################################################################################
 
-import sdl2
 import times
 
 type
