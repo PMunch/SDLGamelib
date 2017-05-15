@@ -1,43 +1,49 @@
-################################################################################
-# An animation is a general purpose container that has a collection of elements
-# which is cycled as time passes. To get the current frame call the frame()
-# procedure.
-#
-# A special class, AnimationTR, is created as an alias for an animation of
-# TextureRegions. As AnimationTR object can either be created from a single
-# texture, texture region or a sequence of texture regions. In the two first
-# cases the texture or texture region will be split into a sequence of texture
-# regions based on it's frames count for internal use (note that the texture is
-# not modified).
-#
-# Currently two AnimationTypes are supported: cycle and pingpong. Cycle wraps
-# around when it comes to the end while pingpong reverses the animation and
-# runs it back backwards.
-#
-# The tick function takes the number of seconds since it was called to ensure
-# that animations are always running at the same speed.
-#
-# Rendering is supported for the AnimationTR type and uses the same options as
-# a texture region.
-################################################################################
+## An animation is a general purpose container that has a collection of elements
+## which is cycled as time passes. To get the current frame call the frame()
+## procedure.
+##
+## A special class, AnimationTR, is created as an alias for an animation of
+## TextureRegions. As AnimationTR object can either be created from a single
+## texture, texture region or a sequence of texture regions. In the two first
+## cases the texture or texture region will be split into a sequence of texture
+## regions based on it's frames count for internal use (note that the texture is
+## not modified).
+##
+## Currently two AnimationTypes are supported: cycle and pingpong. Cycle wraps
+## around when it comes to the end while pingpong reverses the animation and
+## runs it back backwards.
+##
+## The tick function takes the number of seconds since it was called to ensure
+## that animations are always running at the same speed.
+##
+## Rendering is supported for the AnimationTR type and uses the same options as
+## a texture region.
+
 
 import sdl2
 import textureregion
 
 type
-  AnimationType* {.pure.} = enum pingpong, cycle
+  AnimationType* {.pure.} = ## Enum type to select what the animation should do
+    ## when it comes to it's end. Pingpong means that it reverts direction and
+    ## cycle means that it starts over.
+    enum pingpong, cycle
 
   Animation*[T] = ref object
-    frames*: seq[T]
-    frameIndex*: int
+    ## Animation type to pass into these procedures
+    frames*: seq[T] ## The sequence of frames
+    frameIndex*: int ## The current frame, change to jump to a specific frame
     timeSinceLastFrame: float
     longestFrameTime:float
     animationType: AnimationType
     speed: int
 
-  AnimationTR* = Animation[TextureRegion]
+  AnimationTR* = ## Convenience type for an animation of TextureRegions
+    Animation[TextureRegion]
 
 proc setFps*(animation: Animation, fps:float) =
+  ## Set the FPS of the given animation. Can be negative to run the animation in
+  ## reverse, or zero to stop the animation.
   if fps>0:
     animation.longestFrameTime = 1/fps
     animation.speed = 1
@@ -48,9 +54,11 @@ proc setFps*(animation: Animation, fps:float) =
     animation.speed = 0
 
 proc setAnimationType*(animation: Animation, animationType: AnimationType) =
+  ## Set the animation type.
   animation.animationType = animationType
 
 proc tick*(animation: Animation, time: float) =
+  ## Move the animation forwards given the time since the last tick.
   if animation.speed != 0:
     animation.timeSinceLastFrame += time
     while animation.timeSinceLastFrame > animation.longestFrameTime:
@@ -65,6 +73,8 @@ proc tick*(animation: Animation, time: float) =
       animation.timeSinceLastFrame -= animation.longestFrameTime
 
 proc newAnimation*[T](frames: seq[T], fps: float = 12, animationType: AnimationType = AnimationType.cycle): Animation[T] =
+  ## Create a new animation from a set of frames and optionally an FPS and
+  ## AnimationType.
   new result
   result.frames = frames
   result.animationType = animationType
@@ -72,22 +82,25 @@ proc newAnimation*[T](frames: seq[T], fps: float = 12, animationType: AnimationT
   result.setFps(fps)
 
 proc frame*[T](animation: Animation[T]): T=
+  ## Gets the current frame for an animation
   animation.frames[animation.frameIndex]
 
 
-### SDL specific stuff
+# SDL specific stuff:
 
-
-template newAnimation*(texture: TexturePtr, region: Rect, frames: int, fps: int, animationType: AnimationType): Animation =
-  newAnimation(texture.newTextureRegion(region.x,region.y,region.w,region.h),frames,fps,animationType)
-
-template render*(renderer: RendererPtr, animation: Animation, pos: Point,  rotation:float = 0, scaleX, scaleY: float = 1, alpha:uint8 = 255) =
-  render(renderer,animation,pos.x,pos.y,rotation,scaleX,scaleY,alpha)
-
-proc render*(renderer: RendererPtr, animation: Animation, x,y: cint, rotation: float = 0, scaleX, scaleY: float = 1, alpha:uint8 = 255) =
+proc render*(renderer: RendererPtr, animation: AnimationTR, x,y: cint, rotation: float = 0, scaleX, scaleY: float = 1, alpha:uint8 = 255) =
+  ## Convenience procedure for rendering the current frame of an animation of
+  ## TextureRegions.
   renderer.render(animation.frame,x,y,rotation,scaleX,scaleY,alpha)
 
-proc newAnimation*(textureRegion: TextureRegion, frames: int, fps: float = 12, animationType: AnimationType = AnimationType.cycle): Animation[TextureRegion] =
+template render*(renderer: RendererPtr, animation: AnimationTR, pos: Point,  rotation:float = 0, scaleX, scaleY: float = 1, alpha:uint8 = 255) =
+  ## Convenience procedure for rendering the current frame of an animation of
+  ## TextureRegions.
+  render(renderer,animation,pos.x,pos.y,rotation,scaleX,scaleY,alpha)
+
+proc newAnimation*(textureRegion: TextureRegion, frames: int, fps: float = 12, animationType: AnimationType = AnimationType.cycle): AnimationTR =
+  ## Convenience procedure to create an Animation from a texture region and the
+  ## number of frames in the region (horizontal split only for now).
   new result
   result.animationType = animationType
   result.speed = 1
@@ -138,3 +151,8 @@ proc newAnimation*(textureRegion: TextureRegion, frames: int, fps: float = 12, a
     result.frames = newSeq[TextureRegion](textureRegions.len)
     for i in 0..textureRegions.high:
       result.frames[i] = textureRegions[textureRegions.high-i]
+
+template newAnimation*(texture: TexturePtr, region: Rect, frames: int, fps: int, animationType: AnimationType): AnimationTR =
+  ## Convenience template to create a new animation from a texture, a region and
+  ## the number of frames in the region (horizontal split only for now).
+  newAnimation(texture.newTextureRegion(region.x,region.y,region.w,region.h),frames,fps,animationType)

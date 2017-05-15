@@ -1,19 +1,21 @@
-################################################################################
-# Tweens are a wrapper around Bezier curves to make it easy to ease between
-# values. There are three tween types included here, Tween which has a float
-# between 0 and 1. TweenValue which takes two floats to ease between and eases
-# between them. And a TweenSeq which takes two sequences of values to ease
-# between.
-#
-# A tool such as http://cubic-bezier.com/ can be used to generate easing curves.
-# You can also use the first 25 easing curves found here: http://easings.net/
-# directly by calling the initTween procuderes with EaseFunction.<ease>.
-#
+## Tweens are a way to ease between values, usefull for smooth motion and
+## animations. This module also contains a wrapper around Bezier curves to make
+## it easy to ease between values without having to write your own functions.
+##
+## There are three tween types included here, Tween which has a float
+## between 0 and 1. TweenValue which takes two floats to ease between and eases
+## between them. And a TweenSeq which takes two sequences of values to ease
+## between.
+##
+## A tool such as http://cubic-bezier.com/ can be used to generate easing
+## curves. You can also use the easing curves found here:
+## http://easings.net/ directly by calling the initTween procuderes with
+## EaseFunction.<ease>.
+
 # The code for the Bezier curves were copied from:
 # https://github.com/gre/bezier-easing and rewritten to Nim. This work is
 # licensed under the MIT License and it's original copyright comment is
 # included below.
-################################################################################
 
 #[/**
  * https://github.com/gre/bezier-easing
@@ -25,9 +27,12 @@ import tables
 import math
 
 type
-  EaseFunction* = proc(t: float): float
+  EaseFunction* = ## Type for an EaseFunction that can be used in a Tween.
+    ## Takes the time from 0 to the set duration and returns the current state.
+    proc(t: float): float
 
   Tween* = ref object of RootObj
+    ## Regular tween object that goes from 0 to 1
     EasingFunction: proc(x: float): float
     cached: bool
     cache: float
@@ -35,24 +40,27 @@ type
     duration: float
 
   TweenValue* = ref object of Tween
+    ## Tween object that goes from the gives start and stop value
     fromValue: float
     ratio: float
 
   TweenSeq* = ref object of Tween
+    ## Tween object that returns a sequence of float between the two sequences
     fromValues: seq[float]
     ratios: seq[float]
 
-  Bezier* {.pure.} = enum
-    linear, easeInSine, easeOutSine, easeInOutSine,
-    easeInQuad, easeOutQuad, easeInOutQuad,
-    easeInCubic, easeOutCubic, easeInOutCubic,
-    easeInQuart, easeOutQuart, easeInOutQuart,
-    easeInQuint, easeOutQuint, easeInOutQuint,
-    easeInExpo, easeOutExpo, easeInOutExpo,
-    easeInCirc, easeOutCirc, easeInOutCirc,
-    easeInBack, easeOutBack, easeInOutBack,
-    easeOutBounce, easeInBounce, easeInOutBounce
-    easeInElastic, easeOutElastic, easeInOutElastic
+  Ease* {.pure.} = enum
+    ## Enum type for the built in easing functions
+    linear, InSine, OutSine, InOutSine,
+    InQuad, OutQuad, InOutQuad,
+    InCubic, OutCubic, InOutCubic,
+    InQuart, OutQuart, InOutQuart,
+    InQuint, OutQuint, InOutQuint,
+    InExpo, OutExpo, InOutExpo,
+    InCirc, OutCirc, InOutCirc,
+    InBack, OutBack, InOutBack,
+    OutBounce, InBounce, InOutBounce
+    InElastic, OutElastic, InOutElastic
 
 
 #// These values are established by empiricism with tests (tradeoff: performance VS precision)
@@ -153,32 +161,32 @@ proc getEasingFunction(mX1, mY1, mX2, mY2: float): EaseFunction  =
     return calcBezier(getTForX(t), mY1, mY2)
 
 var easeFunctions = {
-  Bezier.linear: EaseFunction(proc(t:float):float = t), #getEasingFunction(0.0,0.0,1.0,1.0),
-  Bezier.easeInSine: EaseFunction(proc(t:float):float = 1-sin(PI/2+t*PI/2)),
-  Bezier.easeOutSine: EaseFunction(proc(t:float):float = sin(t*PI/2)), #getEasingFunction(0.39, 0.575, 0.565, 1.0),
-  Bezier.easeInOutSine: EaseFunction(proc(t:float):float = (1-sin(PI/2+t*PI))/2),
-  Bezier.easeInQuad: EaseFunction(proc(t:float):float = pow(t,2)),
-  Bezier.easeOutQuad: EaseFunction(proc(t:float):float = t*(2-t)),
-  Bezier.easeInOutQuad: EaseFunction(proc(t:float):float =(if t>0.5: 2*t*t else: -1+(4-2*t)*t)),
-  Bezier.easeInCubic: EaseFunction(proc(t:float):float = pow(t,3)),
-  Bezier.easeOutCubic:  EaseFunction(proc(t:float):float = pow(t-1,3)+1),
-  Bezier.easeInOutCubic: EaseFunction(proc(t:float):float =(if t>0.5: 4*pow(t,3) else: (t-1)*pow(2*t-2,2)+1)),
-  Bezier.easeInQuart: EaseFunction(proc(t:float):float = pow(t,4)),
-  Bezier.easeOutQuart: EaseFunction(proc(t:float):float = 1-pow(t-1,4)),
-  Bezier.easeInOutQuart: EaseFunction(proc(t:float):float = (if t<0.5: 8*pow(t,4) else: 1-8*pow(t-1,4))),
-  Bezier.easeInQuint: EaseFunction(proc(t:float):float = pow(t,5)),
-  Bezier.easeOutQuint: EaseFunction(proc(t:float):float = 1-pow(t-1,5)),
-  Bezier.easeInOutQuint: EaseFunction(proc(t:float):float = (if t>0.5: 16*pow(t,5) else: 1+16*pow(t-1,5))),
-  Bezier.easeInExpo: EaseFunction(proc(t:float):float = pow(2,10*(t/1-1))),
-  Bezier.easeOutExpo: EaseFunction(proc(t:float):float = 1*(-pow(2,-10*t/1)+1)),
-  Bezier.easeInOutExpo: EaseFunction(proc(t:float):float = (if t<0.5: 0.5*pow(2,(10 * (t*2 - 1))) else: 0.5*(-pow(2, -10*(t*2-1))+2))),
-  Bezier.easeInCirc: EaseFunction(proc(t:float):float = -1*(sqrt(1 - t * t) - 1)),
-  Bezier.easeOutCirc: EaseFunction(proc(t:float):float = 1*sqrt(1 - (t-1).pow(2))),
-  Bezier.easeInOutCirc: EaseFunction(proc(t:float):float = (if t < 0.5: -0.5*(sqrt(1 - pow(t*2,2)) - 1) else: 0.5*(sqrt(1 - pow(t*2-2,2)) + 1))),
-  Bezier.easeInBack: EaseFunction(proc(t:float):float = t * t * ((1.70158 + 1) * t - 1.70158)),
-  Bezier.easeOutBack: EaseFunction(proc(t:float):float = 1 * ((t/1 - 1) * (t/2) * ((1.70158 + 1) * (t/2) + 1.70158) + 1)),
-  Bezier.easeInOutBack: EaseFunction(proc(t:float):float = (if t<0.5: 0.5*(4*t*t*(3.5949095 * t*2 - 2.5949095)) else: 0.5 * ((t*2 - 2).pow(2) * ((4.9572369875) * (t*2-2) + 3.9572369875) + 2))),
-  Bezier.easeOutBounce: EaseFunction(
+  Ease.linear: EaseFunction(proc(t:float):float = t), #getEasingFunction(0.0,0.0,1.0,1.0),
+  Ease.InSine: EaseFunction(proc(t:float):float = 1-sin(PI/2+t*PI/2)),
+  Ease.OutSine: EaseFunction(proc(t:float):float = sin(t*PI/2)), #getEasingFunction(0.39, 0.575, 0.565, 1.0),
+  Ease.InOutSine: EaseFunction(proc(t:float):float = (1-sin(PI/2+t*PI))/2),
+  Ease.InQuad: EaseFunction(proc(t:float):float = pow(t,2)),
+  Ease.OutQuad: EaseFunction(proc(t:float):float = t*(2-t)),
+  Ease.InOutQuad: EaseFunction(proc(t:float):float =(if t>0.5: 2*t*t else: -1+(4-2*t)*t)),
+  Ease.InCubic: EaseFunction(proc(t:float):float = pow(t,3)),
+  Ease.OutCubic:  EaseFunction(proc(t:float):float = pow(t-1,3)+1),
+  Ease.InOutCubic: EaseFunction(proc(t:float):float =(if t>0.5: 4*pow(t,3) else: (t-1)*pow(2*t-2,2)+1)),
+  Ease.InQuart: EaseFunction(proc(t:float):float = pow(t,4)),
+  Ease.OutQuart: EaseFunction(proc(t:float):float = 1-pow(t-1,4)),
+  Ease.InOutQuart: EaseFunction(proc(t:float):float = (if t<0.5: 8*pow(t,4) else: 1-8*pow(t-1,4))),
+  Ease.InQuint: EaseFunction(proc(t:float):float = pow(t,5)),
+  Ease.OutQuint: EaseFunction(proc(t:float):float = 1-pow(t-1,5)),
+  Ease.InOutQuint: EaseFunction(proc(t:float):float = (if t>0.5: 16*pow(t,5) else: 1+16*pow(t-1,5))),
+  Ease.InExpo: EaseFunction(proc(t:float):float = pow(2,10*(t/1-1))),
+  Ease.OutExpo: EaseFunction(proc(t:float):float = 1*(-pow(2,-10*t/1)+1)),
+  Ease.InOutExpo: EaseFunction(proc(t:float):float = (if t<0.5: 0.5*pow(2,(10 * (t*2 - 1))) else: 0.5*(-pow(2, -10*(t*2-1))+2))),
+  Ease.InCirc: EaseFunction(proc(t:float):float = -1*(sqrt(1 - t * t) - 1)),
+  Ease.OutCirc: EaseFunction(proc(t:float):float = 1*sqrt(1 - (t-1).pow(2))),
+  Ease.InOutCirc: EaseFunction(proc(t:float):float = (if t < 0.5: -0.5*(sqrt(1 - pow(t*2,2)) - 1) else: 0.5*(sqrt(1 - pow(t*2-2,2)) + 1))),
+  Ease.InBack: EaseFunction(proc(t:float):float = t * t * ((1.70158 + 1) * t - 1.70158)),
+  Ease.OutBack: EaseFunction(proc(t:float):float = 1 * ((t/1 - 1) * (t/2) * ((1.70158 + 1) * (t/2) + 1.70158) + 1)),
+  Ease.InOutBack: EaseFunction(proc(t:float):float = (if t<0.5: 0.5*(4*t*t*(3.5949095 * t*2 - 2.5949095)) else: 0.5 * ((t*2 - 2).pow(2) * ((4.9572369875) * (t*2-2) + 3.9572369875) + 2))),
+  Ease.OutBounce: EaseFunction(
     proc(t:float):float =
       if t<1/2.75:
         7.5625*t.pow(2)
@@ -190,30 +198,30 @@ var easeFunctions = {
         7.5625*(t - (2.625 / 2.75)).pow(2) + 0.984375
   )
 }.toTable
-easeFunctions[Bezier.easeInBounce] =
+easeFunctions[Ease.InBounce] =
   EaseFunction(
     proc(t:float):float =
-      1-easeFunctions[Bezier.easeOutBounce](1 - t)
+      1-easeFunctions[Ease.OutBounce](1 - t)
   )
-easeFunctions[Bezier.easeInOutBounce] =
+easeFunctions[Ease.InOutBounce] =
   EaseFunction(
     proc(t:float):float =
       if t<0.5:
-        easeFunctions[Bezier.easeInBounce](t*2)*0.5
+        easeFunctions[Ease.InBounce](t*2)*0.5
       else:
-        easeFunctions[Bezier.easeOutBounce](t*2-1)*0.5+1*0.5
+        easeFunctions[Ease.OutBounce](t*2-1)*0.5+1*0.5
   )
-easeFunctions[Bezier.easeInElastic] =
+easeFunctions[Ease.InElastic] =
   EaseFunction(
     proc(t:float):float =
       -(pow(2, 10 * (t - 1))*sin(((t-1) * 1 - 0.075038041) * (2 * PI) / 0.3))
   )
-easeFunctions[Bezier.easeOutElastic] =
+easeFunctions[Ease.OutElastic] =
   EaseFunction(
     proc(t:float):float =
       pow(2, -10 * t) * sin((t * 1 - 0.075038041) * (2 * PI) / 0.3) + 1
   )
-easeFunctions[Bezier.easeInOutElastic] =
+easeFunctions[Ease.InOutElastic] =
   EaseFunction(
     proc(t:float):float =
       if t<0.5:
@@ -222,23 +230,28 @@ easeFunctions[Bezier.easeInOutElastic] =
         pow(2, -10 * (t*2 - 1)) * sin(((t*2-1) * 1 - 0.075038041) * (2 * PI) / 0.3) * 0.5 + 1
   )
 proc initTween*(duration:float, easingFunc: EaseFunction): Tween =
+  ## Initialize a new tween with a duration and a custom easing function.
   new result
   result.duration = duration
   result.EasingFunction = easingFunc
 
-template initTween*(duration:float, ease: Bezier): Tween =
-  #let easeParams = easeFunctions[ease]
-  initTween(duration, easeFunctions[ease]) #easeParams[0],easeParams[1],easeParams[2],easeParams[3])
+template initTween*(duration:float, ease: Ease): Tween =
+  ## Initialize a new tween with a duration and a built in ease function
+  initTween(duration, easeFunctions[ease])
 
 template initTween*(duration:float, mX1, mY1, mX2, mY2: float): Tween =
+  ## Initialize a new tween with a duration and a custom Bezier curve
   initTween(duration, getEasingFunction(mX1, mY1, mX2, mY2))
 
 proc tick*(tween: Tween or TweenValue or TweenSeq, tickLength: float) =
+  ## Ticks the tween forward
   if tween.t<tween.duration:
     tween.cached = false
   tween.t += tickLength
 
 proc value*(tween: Tween): float =
+  ## Returns the value of a Tween at the current time. NOTE: This caches the
+  ## value so calling this multiple times is safe.
   if tween.cached:
     return tween.cache
   if tween.t<tween.duration:
@@ -248,28 +261,38 @@ proc value*(tween: Tween): float =
   tween.cached = true
   return tween.cache
 
-template initTweenValue*(fromValue, toValue:float , ease: Bezier): TweenValue =
-  #let easeParams = easeFunctions[ease]
-  initTweenValue(fromValue, toValue, easeFunctions[ease]) #easeParams[0],easeParams[1],easeParams[2],easeParams[3])
+template initTweenValue*(fromValue, toValue:float , ease: Ease): TweenValue =
+  ## Initialize a new tween with a duration, start value, stop value, and a
+  ## built-in easing function.
+  initTweenValue(fromValue, toValue, easeFunctions[ease])
 
 proc initTweenValue*(fromValue, toValue: float, easingFunc: EaseFunction): TweenValue =
+  ## Initialize a new tween with a duration, start value, stop value, and a
+  ## custom easing function.
   new result
   result.fromValue = fromValue
   result.ratio = toValue-fromValue
   result.EasingFunction = easingFunc
 
 proc initTweenValue*(fromValue, toValue, mX1, mY1, mX2, mY2: float): TweenValue =
+  ## Initialize a new tween with a duration, start value, stop value, and a
+  ## custom bezier curve.
   initTweenValue(fromValue, toValue, getEasingFunction(mX1, mY1, mX2, mY2))
 
 proc value*(tween: TweenValue): float =
+  ## Returns the value of a TweenValue at the current time. NOTE: This caches
+  ## the value so calling this multiple times is safe.
   var tweenValue = tween.Tween.value()
   return tween.fromValue + tweenValue*tween.ratio
 
-template initTweenValues*(fromValues: seq[float], toValues: seq[float], ease: Bezier): TweenSeq =
-  #let easeParams = easeFunctions[ease]
-  initTweenValues(fromValues, toValues, easeFunctions[ease]) #easeParams[0],easeParams[1],easeParams[2],easeParams[3])
+template initTweenValues*(fromValues: seq[float], toValues: seq[float], ease: Ease): TweenSeq =
+  ## Initialize a new tween with a duration, start values, stop values, and a
+  ## built-in easing function.
+  initTweenValues(fromValues, toValues, easeFunctions[ease])
 
 proc initTweenValues*(fromValues: seq[float], toValues: seq[float], easingFunc: EaseFunction): TweenSeq =
+  ## Initialize a new tween with a duration, start values, stop values, and a
+  ## custom easing function.
   if fromValues.len != toValues.len:
     raise newException(ValueError, "fromValues and toValues much be of the same length")
   new result
@@ -279,11 +302,15 @@ proc initTweenValues*(fromValues: seq[float], toValues: seq[float], easingFunc: 
     result.ratios.add toValues[i]-fromValues[i]
   result.EasingFunction = easingFunc
 
+proc initTweenValues*(fromValues: seq[float], toValues: seq[float], mX1, mY1, mX2, mY2: float): TweenSeq =
+  ## Initialize a new tween with a duration, start values, stop values, and a
+  ## custom bezier curve.
+  initTweenValues(fromValues, toValues, getEasingFunction(mX1, mY1, mX2, mY2))
+
 proc values*(tween: TweenSeq,i:int): seq[float] =
+  ## Returns the sequence of values of a TweenSeq. NOTE: This caches
+  ## the value so calling this multiple times is safe.
   result = @[]
   let ratio = tween.Tween.value()
   for i in 0..(tween.fromValues).high:
     result.add tween.fromValues[i] + ratio*tween.ratios[i]
-
-proc initTweenValues*(fromValues: seq[float], toValues: seq[float], mX1, mY1, mX2, mY2: float): TweenSeq =
-  initTweenValues(fromValues, toValues, getEasingFunction(mX1, mY1, mX2, mY2))

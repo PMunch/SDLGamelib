@@ -1,19 +1,18 @@
-################################################################################
-# NinePatch is a special format for scalable bitmaps. It uses guides drawn into
-# the image to tell a program which regions are able to scale and which are
-# not, with optional guides on where in the scaled image content should be
-# drawn. This is a support class for the TextureAtlas which needs to take the
-# arguments decoded from the image directly. In the future this will also
-# include the means to load a NinePatch image directly. Note that the NinePatch
-# has two different render functions, one that renders the NinePatch to fill a
-# region (regular render), the other to render it around a region
-# (renderForRegion).
-################################################################################
+## NinePatch is a special format for scalable bitmaps. It uses guides drawn into
+## the image to tell a program which regions are able to scale and which are
+## not, with optional guides on where in the scaled image content should be
+## drawn. This is a support class for the TextureAtlas which needs to take the
+## arguments decoded from the image directly. In the future this will also
+## include the means to load a NinePatch image directly. Note that the NinePatch
+## has two different render functions, one that renders the NinePatch to fill a
+## region (regular render), the other to render it around a region
+## (renderForRegion).
 
 import sdl2
 
 type
   NinePatch* = ref object
+    ## NinePatch object to pass into these procedures
     texture*: TexturePtr
     size*: Rect
     splitColumns: array[0..2,cint]
@@ -26,12 +25,17 @@ type
   Lengths* = tuple[left,top,right,bottom: cint]
 
 proc lengths*(left,top,right,bottom: cint): Lengths =
+  ## Returns a tuple of the type Lengths to describe the splitting and padding
+  ## of a NinePatch image
   result.left = left
   result.top = top
   result.right = right
   result.bottom = bottom
 
 proc newNinePatch*(texture: TexturePtr, region: Rect, size: Rect, offset: Point, rotated: bool, split: Lengths, pad: Lengths): NinePatch =
+  ## Create a new NinePatch object, the first arguments are the same as for a
+  ## TextureRegion. The `split` argument sets the area that can be scaled, the
+  ## pad argument sets the area that can be drawn into.
   new result
   result.texture = texture
   result.size = size
@@ -47,6 +51,7 @@ proc newNinePatch*(texture: TexturePtr, region: Rect, size: Rect, offset: Point,
   result.pad = pad
 
 proc render*(renderer: RendererPtr, ninepatch: NinePatch, x,y,w,h: cint, alpha:uint8 = 255) =
+  ## Renders the NinePatch starting from x, y, and bound by w, h.
   var
     src,dst: Rect
     scW, scH: cint = 0
@@ -77,10 +82,15 @@ proc render*(renderer: RendererPtr, ninepatch: NinePatch, x,y,w,h: cint, alpha:u
   ninepatch.texture.setTextureAlphaMod(255)
 
 template render*(renderer: RendererPtr, ninepatch: NinePatch, region:Rect, alpha:uint8 = 255) =
+  ## Renders the NinePatch within the region
   renderer.render(ninepatch,region.x,region.y,region.w,region.h,alpha)
 
 template renderForRegion*(renderer: RendererPtr, ninepatch: NinePatch, x,y,w,h: cint, alpha:uint8 = 255) =
+  ## Renders the region so that the drawable area (defined by the pad argument
+  ## on creation) is scaled to x, y, w, h.
   renderer.render(ninepatch,x-ninepatch.pad.left,y-ninepatch.pad.top,w+ninepatch.pad.left+ninepatch.pad.right,h+ninepatch.pad.top+ninepatch.pad.bottom,alpha)
 
 template renderForRegion*(renderer: RendererPtr, ninepatch: NinePatch, region:Rect, alpha:uint8 = 255) =
+  ## Renders the region so that the drawable area (defined by the pad argument
+  ## on creation) is scaled to the region.
   renderer.render(ninepatch,region.x-ninepatch.pad.left,region.y-ninepatch.pad.top,region.w+ninepatch.pad.left+ninepatch.pad.right,region.h+ninepatch.pad.top+ninepatch.pad.bottom,alpha)

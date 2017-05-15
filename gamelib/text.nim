@@ -1,24 +1,24 @@
-################################################################################
-# Helper functions for rendering of SDL2 truetype fonts. In order for SDL2 to
-# render fonts they have to be converted to a texture first. The functions in
-# here help with caching this texture and makes sure it's only regenerated
-# whenever the result of an update will be functionally different from the
-# current texture.
-#
-# Note that the blend modes carries some extra special meaning.
-# - Setting the blend mode to shade requires the setBackground procedure to be
-# called before a texture is generated.
-# - For text wrapping the blend mode has to be set to blended. This is a
-# limitaton in SDL2 (there are no wrapped render functions for the other
-# modes). A future workaround for this might be implemented.
-################################################################################
+## Helper functions for rendering of SDL2 truetype fonts. In order for SDL2 to
+## render fonts they have to be converted to a texture first. The functions in
+## here help with caching this texture and makes sure it's only regenerated
+## whenever the result of an update will be functionally different from the
+## current texture.
+##
+## Note that the blend modes carries some extra special meaning.
+## - Setting the blend mode to shade requires the setBackground procedure to be
+## called before a texture is generated.
+## - For text wrapping the blend mode has to be set to blended. This is a
+## limitaton in SDL2 (there are no wrapped render functions for the other
+## modes). A future workaround for this might be implemented.
 
 import sdl2
 import sdl2.ttf
 
 type
-  TextBlendMode* {.pure.} = enum solid, shaded, blended
+  TextBlendMode* {.pure.} = ## The SDL blend mode to use for the text
+    enum solid, shaded, blended
   Text* = ref object
+    ## Text object to pass into these procedures
     lastString: cstring
     texture: TexturePtr
     color: Color
@@ -30,6 +30,7 @@ type
     maxWidth: uint32
 
 proc render* (renderer: RendererPtr, text:Text, x,y:cint, rotation: float = 0, scaleX, scaleY: float = 1, alpha: uint8 = 255) =
+  ## Render the cached texture at the given position
   var dest = rect(x, y, (text.region.w.float*scaleX).cint, (text.region.h.float*scaleY).cint)
 
   text.texture.setTextureAlphaMod(alpha)
@@ -55,31 +56,41 @@ proc createTexture(text:Text) =
   surface.freeSurface()
 
 proc setText*(text:Text, str:string) =
+  ## Set the text of the text object and regenerate the cached texture if the
+  ## string is different.
   if text.lastString != str:
     text.lastString = str
     text.createTexture
 
 proc setColor*(text:Text, color:Color) =
+  ## Set the color of the text and regenerate the cached texture if it's
+  ## different.
   if text.color != color:
     text.color = color
     text.createTexture
 
 proc setFont*(text:Text, font: FontPtr) =
+  ## Set the font of the text and regenerate the cached texture if it's
+  ## different.
   if text.font != font:
     text.font = font
     text.createTexture
 
 proc setMaxWidth*(text:Text, maxWidth:uint32) =
+  ## Sets the max width of the text. For text wrapping the blend mode has to be
+  ## set to blended. This is a limitaton in SDL2.
   if text.maxWidth != maxWidth:
     text.maxWidth = maxWidth
     text.createTexture
 
 proc setBackground*(text:Text, background: Color) =
+  ## Sets the background color of the text for the shaded blend mode.
   if text.background != background:
     text.background = background
     text.createTexture
 
 proc newText* (renderer: RendererPtr, font: FontPtr, text: string, color:Color = color(255,255,255,0), blendMode: TextBlendMode = TextBlendMode.solid, maxWidth: uint32 = uint32.high): Text =
+  ## Creates a new text object.
   new result
   result.lastString = text
   result.font = font

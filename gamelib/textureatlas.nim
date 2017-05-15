@@ -1,12 +1,11 @@
-################################################################################
-# The TextureAtlas implemented here supports all functions of the LibGDX
-# texture atlas with the exception of MipMap levels and OpenGL texture filter.
-# It creates lookup tables for texture regions, animations (of the AnimationTR
-# type), and NinePatch images for quick access of the loaded regions. Texture
-# atlases are used to minimize the overhead of writing textures into graphics
-# memory separately and instead copies one large texture and then blits out
-# copies of the regions in the texture.
-################################################################################
+## The TextureAtlas implemented here supports all functions of the LibGDX
+## texture atlas with the exception of MipMap levels and OpenGL texture filter.
+## It creates lookup tables for texture regions, animations (of the AnimationTR
+## type), and NinePatch images for quick access of the loaded regions. Texture
+## atlases are used to minimize the overhead of writing textures into graphics
+## memory separately and instead copies one large texture and then blits out
+## copies of the regions in the texture.
+
 
 import textureregion
 import animation
@@ -20,6 +19,8 @@ import streams
 
 type
   TextureAtlas* = ref object
+    ## Texture atlas object containing all the regions, animations, and
+    ## ninepatches.
     regions: Table[string,TextureRegion]
     animations: Table[string,Animation[TextureRegion]]
     ninepatches: Table[string,NinePatch]
@@ -41,18 +42,27 @@ const field = (
   ninePad: "  pad")
 
 proc getTextureCount*(atlas: TextureAtlas): int =
+  ## Gets the number of TextureRegions in the atlas
   return atlas.regions.len
 
 proc getAnimationCount*(atlas: TextureAtlas): int =
+  ## Gets the number of Animations in the atlas
   return atlas.animations.len
 
+proc getNinePatchCount*(atlas: TextureAtlas): int =
+  ## Gets the number of Animations in the atlas
+  return atlas.ninepatches.len
+
 proc getTextureRegion*(atlas: TextureAtlas, name: string): TextureRegion =
+  ## Gets a specific TextureRegion by name
   return atlas.regions[name]
 
 proc getAnimation*(atlas: TextureAtlas, name: string): Animation[TextureRegion] =
+  ## Gets a specific Animation by name
   return atlas.animations[name]
 
 proc getNinePatch*(atlas: TextureAtlas, name: string): NinePatch =
+  ## Gets a specific NinePatch by name
   return atlas.ninepatches[name]
 
 proc getValue(line:string, field:string): string =
@@ -86,11 +96,8 @@ proc addCurrent(atlas:TextureAtlas, texture:TexturePtr, ninePatch: bool, curName
   else:
     atlas.ninepatches[curName]=newNinePatch(texture,curRegion,curSize,curOffset,curRotation,curNineSplit,curNinePad)
 
-proc loadAtlas*(renderer: RendererPtr, atlasFileName: string): TextureAtlas =
-  new result
-  result.regions = initTable[string,TextureRegion]()
-  result.animations = initTable[string,Animation[TextureRegion]]()
-  result.ninepatches = initTable[string,NinePatch]()
+proc loadIntoAtlas*(renderer: RendererPtr, atlas: TextureAtlas, atlasFileName: string) =
+  ## Loads more elements into an existing atlas from a separate atlas file.
   var
     lineCount = 0
     texture: TexturePtr
@@ -115,7 +122,7 @@ proc loadAtlas*(renderer: RendererPtr, atlasFileName: string): TextureAtlas =
       # If the line starts with two spaces it's part of a texture
       if not line.startsWith("  "):
         if line == "":
-          addCurrent(result,texture,ninePatch,curName,curRegion,curRotation,curSize,curOffset,curIndex,curNineSplit,curNinePad)
+          addCurrent(atlas,texture,ninePatch,curName,curRegion,curRotation,curSize,curOffset,curIndex,curNineSplit,curNinePad)
           ninePatch = false
           lineCount = 1
           continue
@@ -133,7 +140,7 @@ proc loadAtlas*(renderer: RendererPtr, atlasFileName: string): TextureAtlas =
             # According to the libGDX sources this options appears to do nothing
             discard
           else:
-            addCurrent(result,texture,ninePatch,curName,curRegion,curRotation,curSize,curOffset,curIndex,curNineSplit,curNinePad)
+            addCurrent(atlas,texture,ninePatch,curName,curRegion,curRotation,curSize,curOffset,curIndex,curNineSplit,curNinePad)
             ninePatch = false
             curName = line
       else:
@@ -193,4 +200,13 @@ proc loadAtlas*(renderer: RendererPtr, atlasFileName: string): TextureAtlas =
             discard
     lineCount+=1
 
-  addCurrent(result,texture,ninePatch,curName,curRegion,curRotation,curSize,curOffset,curIndex,curNineSplit,curNinePad)
+  addCurrent(atlas,texture,ninePatch,curName,curRegion,curRotation,curSize,curOffset,curIndex,curNineSplit,curNinePad)
+
+
+proc loadAtlas*(renderer: RendererPtr, atlasFileName: string): TextureAtlas =
+  ## Creates a new atlas from the given atlas file.
+  new result
+  result.regions = initTable[string,TextureRegion]()
+  result.animations = initTable[string,Animation[TextureRegion]]()
+  result.ninepatches = initTable[string,NinePatch]()
+  loadIntoAtlas(renderer, result, atlasFileName)

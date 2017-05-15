@@ -1,23 +1,23 @@
-################################################################################
-# A texture region is a simple construct that consists of a texture and a
-# region. The region specifies the area in the texture that will be drawn by
-# the render funciton. Texture regions are especially practical when dealing
-# with animations and texture atlases. This implementation also supports
-# textures with regions that are rotated and offset (to accomodate the texture
-# atlas). When scaling images the x and y position to render at is the upper
-# left corner, when using negative scale the image is simply flipped meaning
-# that a negative scale will still draw from x,y to x+w,y+h and not from x,y to
-# x-w,y-h as might be expected. The rotation is applied around the center of
-# the texture and x and y is located in what would be the top-left corner if it
-# weren't rotated. This means that drawing an image at the same x and y while
-# changing the rotation will make the sprite rotate in place around it's center.
-################################################################################
+## A texture region is a simple construct that consists of a texture and a
+## region. The region specifies the area in the texture that will be drawn by
+## the render funciton. Texture regions are especially practical when dealing
+## with animations and texture atlases. This implementation also supports
+## textures with regions that are rotated and offset (to accomodate the texture
+## atlas). When scaling images the x and y position to render at is the upper
+## left corner, when using negative scale the image is simply flipped meaning
+## that a negative scale will still draw from x,y to x+w,y+h and not from x,y to
+## x-w,y-h as might be expected. The rotation is applied around the center of
+## the texture and x and y is located in what would be the top-left corner if it
+## weren't rotated. This means that drawing an image at the same x and y while
+## changing the rotation will make the sprite rotate in place around it's
+## center.
 
 
 import sdl2
 
 type
   TextureRegion* = ref object
+    ## TextureRegion object
     texture*: TexturePtr
     region*: Rect
     size*: Rect
@@ -25,6 +25,8 @@ type
     rotated*: bool
 
 proc newTextureRegion*(texture: TexturePtr, region: Rect, size: Rect, offset: Point, rotated: bool):TextureRegion =
+  ## Create new texture region with all options, this is primarily used by the
+  ## TextureAtlas module
   new result
   result.texture = texture
   result.region = region
@@ -33,15 +35,19 @@ proc newTextureRegion*(texture: TexturePtr, region: Rect, size: Rect, offset: Po
   result.rotated = rotated
 
 template newTextureRegion*(texture: TexturePtr, region: Rect, size: Rect):TextureRegion =
+  ## Creates a new texture region
   newTextureRegion(texture,region,size,point(0,0),false)
 
 template newTextureRegion*(texture: TexturePtr, x,y,w,h: cint): TextureRegion =
+  ## Creates a new texture region
   newTextureRegion(texture,rect(x,y,w,h),rect(x,y,w,h))
 
 template newTextureRegion*(texture: TexturePtr): TextureRegion =
+  ## Creates a new texture region
   newTextureRegion(texture,rect(texture.x,texture.y,texture.w,texture.h),rect(texture.x,texture.y,texture.w,texture.h))
 
 proc render*(renderer: RendererPtr, textureRegion: TextureRegion, x,y: cint, rotation:float = 0, scaleX, scaleY:float = 1, alpha: uint8 = 255) =
+  ## Render the texture region
   var
     scaleXmod = scaleX
     scaleYmod = scaleY
@@ -91,4 +97,5 @@ proc render*(renderer: RendererPtr, textureRegion: TextureRegion, x,y: cint, rot
   textureRegion.texture.setTextureAlphaMod(255)
 
 template render*(renderer: RendererPtr, textureRegion: TextureRegion, pos: Point, rotation:float = 0, scaleX, scaleY: float = 1, alpha:uint8 = 255) =
+  ## Render the texture region at the specified point
   renderer.render(textureRegion, pos.x.cint, pos.y.cint, rotation, scaleX, scaleY,alpha)
