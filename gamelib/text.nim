@@ -19,7 +19,7 @@ type
     enum solid, shaded, blended
   Text* = ref object
     ## Text object to pass into these procedures
-    lastString: cstring
+    lastString*: cstring
     texture: TexturePtr
     color: Color
     background: Color
