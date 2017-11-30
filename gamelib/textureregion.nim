@@ -44,7 +44,7 @@ template newTextureRegion*(texture: TexturePtr, x,y,w,h: cint): TextureRegion =
 
 template newTextureRegion*(texture: TexturePtr): TextureRegion =
   ## Creates a new texture region
-  newTextureRegion(texture,rect(texture.x,texture.y,texture.w,texture.h),rect(texture.x,texture.y,texture.w,texture.h))
+  newTextureRegion(texture,rect(0,0,texture.w,texture.h),rect(texture.x,texture.y,texture.w,texture.h))
 
 proc render*(renderer: RendererPtr, textureRegion: TextureRegion, x,y: cint, rotation:float = 0, scaleX, scaleY:float = 1, alpha: uint8 = 255) =
   ## Render the texture region

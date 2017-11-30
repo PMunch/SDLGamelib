@@ -36,8 +36,8 @@ type
     EasingFunction: proc(x: float): float
     cached: bool
     cache: float
-    t: float
-    duration: float
+    t*: float
+    duration*: float
 
   TweenValue* = ref object of Tween
     ## Tween object that goes from the gives start and stop value
@@ -261,23 +261,24 @@ proc value*(tween: Tween): float =
   tween.cached = true
   return tween.cache
 
-template initTweenValue*(fromValue, toValue:float , ease: Ease): TweenValue =
+template initTweenValue*(duration:float, fromValue, toValue:float , ease: Ease): TweenValue =
   ## Initialize a new tween with a duration, start value, stop value, and a
   ## built-in easing function.
-  initTweenValue(fromValue, toValue, easeFunctions[ease])
+  initTweenValue(duration, fromValue, toValue, easeFunctions[ease])
 
-proc initTweenValue*(fromValue, toValue: float, easingFunc: EaseFunction): TweenValue =
+proc initTweenValue*(duration: float, fromValue, toValue: float, easingFunc: EaseFunction): TweenValue =
   ## Initialize a new tween with a duration, start value, stop value, and a
   ## custom easing function.
   new result
+  result.duration = duration
   result.fromValue = fromValue
   result.ratio = toValue-fromValue
   result.EasingFunction = easingFunc
 
-proc initTweenValue*(fromValue, toValue, mX1, mY1, mX2, mY2: float): TweenValue =
+proc initTweenValue*(duration:float, fromValue, toValue, mX1, mY1, mX2, mY2: float): TweenValue =
   ## Initialize a new tween with a duration, start value, stop value, and a
   ## custom bezier curve.
-  initTweenValue(fromValue, toValue, getEasingFunction(mX1, mY1, mX2, mY2))
+  initTweenValue(duration, fromValue, toValue, getEasingFunction(mX1, mY1, mX2, mY2))
 
 proc value*(tween: TweenValue): float =
   ## Returns the value of a TweenValue at the current time. NOTE: This caches

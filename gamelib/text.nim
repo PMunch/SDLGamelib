@@ -20,7 +20,11 @@ type
   Text* = ref object
     ## Text object to pass into these procedures
     lastString*: cstring
-    texture: TexturePtr
+    case hasTexture*: bool
+    of true:
+      texture*: TexturePtr
+    of false:
+      surface*: SurfacePtr
     color: Color
     background: Color
     region: Rect
@@ -37,8 +41,8 @@ proc render* (renderer: RendererPtr, text:Text, x,y:cint, rotation: float = 0, s
   renderer.copyEx(text.texture, text.region, dest, angle = rotation, center = nil,
                   flip = SDL_FLIP_NONE)
 
-proc createTexture(text:Text) =
-  let surface =
+proc createSurface(text: Text): SurfacePtr =
+  result =
     if text.blendMode == TextBlendMode.blended:
       text.font.renderUtf8BlendedWrapped(text.lastString, text.color,text.maxWidth)
     elif text.blendMode == TextBlendMode.solid:
@@ -47,49 +51,59 @@ proc createTexture(text:Text) =
       text.font.renderUtf8Shaded(text.lastString, text.color, text.background)
     else:
       nil
-  text.region = rect(0,0,surface.w,surface.h)
+  if result == nil:
+    echo "'" & $(text.lastString) & "'"
+  text.region = rect(0,0,result.w,result.h)
 
-  discard surface.setSurfaceAlphaMod(text.color.a)
-  if text.texture != nil:
-    text.texture.destroy()
-  text.texture = text.renderer.createTextureFromSurface(surface)
-  surface.freeSurface()
+  discard result.setSurfaceAlphaMod(text.color.a)
+
+proc refreshData(text:Text) =
+  let surface = text.createSurface()
+  if text.hasTexture:
+    if text.texture != nil:
+      text.texture.destroy()
+    text.texture = text.renderer.createTextureFromSurface(surface)
+    surface.freeSurface()
+  else:
+    if text.surface != nil:
+      text.surface.freeSurface()
+    text.surface = surface
 
 proc setText*(text:Text, str:string) =
   ## Set the text of the text object and regenerate the cached texture if the
   ## string is different.
   if text.lastString != str:
     text.lastString = str
-    text.createTexture
+    text.refreshData
 
 proc setColor*(text:Text, color:Color) =
   ## Set the color of the text and regenerate the cached texture if it's
   ## different.
   if text.color != color:
     text.color = color
-    text.createTexture
+    text.refreshData
 
 proc setFont*(text:Text, font: FontPtr) =
   ## Set the font of the text and regenerate the cached texture if it's
   ## different.
   if text.font != font:
     text.font = font
-    text.createTexture
+    text.refreshData
 
 proc setMaxWidth*(text:Text, maxWidth:uint32) =
   ## Sets the max width of the text. For text wrapping the blend mode has to be
   ## set to blended. This is a limitaton in SDL2.
   if text.maxWidth != maxWidth:
     text.maxWidth = maxWidth
-    text.createTexture
+    text.refreshData
 
 proc setBackground*(text:Text, background: Color) =
   ## Sets the background color of the text for the shaded blend mode.
   if text.background != background:
     text.background = background
-    text.createTexture
+    text.refreshData
 
-proc newText* (renderer: RendererPtr, font: FontPtr, text: string, color:Color = color(255,255,255,0), blendMode: TextBlendMode = TextBlendMode.solid, maxWidth: uint32 = uint32.high): Text =
+proc newText* (renderer: RendererPtr, font: FontPtr, text: string, color:Color = color(255,255,255,0), blendMode: TextBlendMode = TextBlendMode.solid, maxWidth: uint32 = uint32.high, hasTexture: bool = true): Text =
   ## Creates a new text object.
   new result
   result.lastString = text
@@ -98,5 +112,6 @@ proc newText* (renderer: RendererPtr, font: FontPtr, text: string, color:Color =
   result.color = color
   result.maxWidth = maxWidth
   result.blendMode = blendMode
+  result.hasTexture = hasTexture
   if result.blendMode != TextBlendMode.shaded:
-    result.createTexture
+    result.refreshData
