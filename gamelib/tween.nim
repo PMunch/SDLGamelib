@@ -51,7 +51,7 @@ type
 
   Ease* {.pure.} = enum
     ## Enum type for the built in easing functions
-    linear, InSine, OutSine, InOutSine,
+    Linear, InSine, OutSine, InOutSine,
     InQuad, OutQuad, InOutQuad,
     InCubic, OutCubic, InOutCubic,
     InQuart, OutQuart, InOutQuart,
@@ -161,30 +161,30 @@ proc getEasingFunction(mX1, mY1, mX2, mY2: float): EaseFunction  =
     return calcBezier(getTForX(t), mY1, mY2)
 
 var easeFunctions = {
-  Ease.linear: EaseFunction(proc(t:float):float = t), #getEasingFunction(0.0,0.0,1.0,1.0),
+  Ease.Linear: EaseFunction(proc(t:float):float = t),
   Ease.InSine: EaseFunction(proc(t:float):float = 1-sin(PI/2+t*PI/2)),
-  Ease.OutSine: EaseFunction(proc(t:float):float = sin(t*PI/2)), #getEasingFunction(0.39, 0.575, 0.565, 1.0),
+  Ease.OutSine: EaseFunction(proc(t:float):float = sin(t*PI/2)),
   Ease.InOutSine: EaseFunction(proc(t:float):float = (1-sin(PI/2+t*PI))/2),
   Ease.InQuad: EaseFunction(proc(t:float):float = pow(t,2)),
   Ease.OutQuad: EaseFunction(proc(t:float):float = t*(2-t)),
-  Ease.InOutQuad: EaseFunction(proc(t:float):float =(if t>0.5: 2*t*t else: -1+(4-2*t)*t)),
+  Ease.InOutQuad: EaseFunction(proc(t:float):float =(if t<0.5: 2*t*t else: -1+(4-2*t)*t)),
   Ease.InCubic: EaseFunction(proc(t:float):float = pow(t,3)),
   Ease.OutCubic:  EaseFunction(proc(t:float):float = pow(t-1,3)+1),
-  Ease.InOutCubic: EaseFunction(proc(t:float):float =(if t>0.5: 4*pow(t,3) else: (t-1)*pow(2*t-2,2)+1)),
+  Ease.InOutCubic: EaseFunction(proc(t:float):float =(if t<0.5: 4*pow(t,3) else: (t-1)*pow(2*t-2,2)+1)),
   Ease.InQuart: EaseFunction(proc(t:float):float = pow(t,4)),
   Ease.OutQuart: EaseFunction(proc(t:float):float = 1-pow(t-1,4)),
   Ease.InOutQuart: EaseFunction(proc(t:float):float = (if t<0.5: 8*pow(t,4) else: 1-8*pow(t-1,4))),
   Ease.InQuint: EaseFunction(proc(t:float):float = pow(t,5)),
-  Ease.OutQuint: EaseFunction(proc(t:float):float = 1-pow(t-1,5)),
-  Ease.InOutQuint: EaseFunction(proc(t:float):float = (if t>0.5: 16*pow(t,5) else: 1+16*pow(t-1,5))),
+  Ease.OutQuint: EaseFunction(proc(t:float):float = 1+pow(t-1,5)),
+  Ease.InOutQuint: EaseFunction(proc(t:float):float = (if t<0.5: 16*pow(t,5) else: 1+16*pow(t-1,5))),
   Ease.InExpo: EaseFunction(proc(t:float):float = pow(2,10*(t/1-1))),
   Ease.OutExpo: EaseFunction(proc(t:float):float = 1*(-pow(2,-10*t/1)+1)),
   Ease.InOutExpo: EaseFunction(proc(t:float):float = (if t<0.5: 0.5*pow(2,(10 * (t*2 - 1))) else: 0.5*(-pow(2, -10*(t*2-1))+2))),
   Ease.InCirc: EaseFunction(proc(t:float):float = -1*(sqrt(1 - t * t) - 1)),
   Ease.OutCirc: EaseFunction(proc(t:float):float = 1*sqrt(1 - (t-1).pow(2))),
   Ease.InOutCirc: EaseFunction(proc(t:float):float = (if t < 0.5: -0.5*(sqrt(1 - pow(t*2,2)) - 1) else: 0.5*(sqrt(1 - pow(t*2-2,2)) + 1))),
-  Ease.InBack: EaseFunction(proc(t:float):float = t * t * ((1.70158 + 1) * t - 1.70158)),
-  Ease.OutBack: EaseFunction(proc(t:float):float = 1 * ((t/1 - 1) * (t/2) * ((1.70158 + 1) * (t/2) + 1.70158) + 1)),
+  Ease.InBack: EaseFunction(proc(t:float):float = t * t * (2.70158 * t - 1.70158)),
+  Ease.OutBack: EaseFunction(proc(t:float):float = 1 - (1-t) * (1-t) * (2.70158 * (1-t) - 1.70158)),
   Ease.InOutBack: EaseFunction(proc(t:float):float = (if t<0.5: 0.5*(4*t*t*(3.5949095 * t*2 - 2.5949095)) else: 0.5 * ((t*2 - 2).pow(2) * ((4.9572369875) * (t*2-2) + 3.9572369875) + 2))),
   Ease.OutBounce: EaseFunction(
     proc(t:float):float =
@@ -245,7 +245,7 @@ template initTween*(duration:float, mX1, mY1, mX2, mY2: float): Tween =
 
 proc tick*(tween: Tween or TweenValue or TweenSeq, tickLength: float) =
   ## Ticks the tween forward
-  if tween.t<tween.duration:
+  if tween.t <= tween.duration:
     tween.cached = false
   tween.t += tickLength
 
@@ -254,9 +254,9 @@ proc value*(tween: Tween): float =
   ## value so calling this multiple times is safe.
   if tween.cached:
     return tween.cache
-  if tween.t<tween.duration:
+  if tween.t <= tween.duration:
     tween.cache = tween.EasingFunction(tween.t/tween.duration)
-  elif tween.t>tween.duration:
+  elif tween.t > tween.duration:
     tween.cache = tween.EasingFunction(1)
   tween.cached = true
   return tween.cache
