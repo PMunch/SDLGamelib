@@ -12,7 +12,7 @@
 ## modes). A future workaround for this might be implemented.
 
 import sdl2
-import sdl2.ttf
+import sdl2/ttf
 
 type
   TextBlendMode* {.pure.} = ## The SDL blend mode to use for the text

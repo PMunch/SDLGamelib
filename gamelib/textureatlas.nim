@@ -12,9 +12,9 @@ import animation
 import ninepatch
 import tables
 import sdl2
-import sdl2.image
+import sdl2/image
 import strutils
-import files except lines
+import files
 import streams
 
 type

@@ -1,7 +1,7 @@
 import json
 import textureregion
 import sdl2
-import sdl2.image
+import sdl2/image
 
 type
   TileSet* = ref object

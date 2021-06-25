@@ -1,7 +1,7 @@
 import json
 import tileset
 import sdl2
-import sdl2.ttf
+import sdl2/ttf
 import tables
 import text
 import strutils

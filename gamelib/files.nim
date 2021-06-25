@@ -46,9 +46,3 @@ proc newStreamWithRWops*(ops: RWopsPtr): RWOpsStream =
   result.getPositionImpl = cast[type(result.getPositionImpl)](rwGetPosition)
   result.readDataImpl = cast[type(result.readDataImpl)](rwReadData)
   result.writeDataImpl = cast[type(result.writeDataImpl)](rwWriteData)
-
-iterator lines*(s: Stream): string =
-  ## Iterates over all the lines in a stream
-  var str = ""
-  while s.readLine(str):
-    yield str
