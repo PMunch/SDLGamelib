@@ -14,7 +14,7 @@ import tables
 import sdl2
 import sdl2.image
 import strutils
-import files
+import files except lines
 import streams
 
 type
